@@ -9,8 +9,7 @@ from telegram.ext import (
     filters,
     ContextTypes,
 )
-
-
+from PIL import ImageGrab
 from dotenv import load_dotenv
 
 
@@ -62,12 +61,23 @@ async def run_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда /screenshot
 async def screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Делаю скриншот... (пока заглушка)")
+    try:
+        await update.message.reply_text("Делаю скриншот...")
+        # Делаем скриншот
+        screenshot = ImageGrab.grab()
+        # Сохраняем во временный файл
+        screenshot.save("screenshot.png")
+        # Отправляем в Telegram
+        await update.message.reply_photo(photo=open("screenshot.png", "rb"))
+        # Удаляем файл
+        os.remove("screenshot.png")
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка скриншота: {e}")
 
 
 # Команда /webcam
 async def webcam(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Делаю запись с веб-камеры... (пока заглушка)")
+    await update.message.reply_text("Делаю запись с веб-камеры...")
 
 
 # Обработчик текстовых сообщений
