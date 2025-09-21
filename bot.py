@@ -1,0 +1,86 @@
+import subprocess
+import os
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ContextTypes,
+)
+
+
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+TOKEN = os.getenv("token")
+
+print(TOKEN)
+
+
+# Обработчик команды /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет! Я бот для управления ПК.")
+
+
+# Команда /shutdown
+async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Выключаю ПК...")
+    # Пока не выполняем выключение, просто сообщаем
+
+
+# Команда /cmd
+async def run_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    command = " ".join(context.args)
+    try:
+        # Выполняем команду
+        result = subprocess.run(
+            command, shell=True, capture_output=True, text=True, encoding="cp866"
+        )  # Для Windows
+        output = result.stdout + result.stderr
+        if not output:
+            output = "Команда выполнена, вывод пуст."
+        # Отправляем результат (ограничим длину, если слишком длинный)
+        if len(output) > 4096:
+            output = output[:4090] + "\n[...]"
+        await update.message.reply_text(
+            f"Результат выполнения:\n```\n{output}\n```", parse_mode="Markdown"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка выполнения команды: {e}")
+
+
+# Команда /screenshot
+async def screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Делаю скриншот... (пока заглушка)")
+
+
+# Команда /webcam
+async def webcam(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Делаю запись с веб-камеры... (пока заглушка)")
+
+
+# Обработчик текстовых сообщений
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Получено: " + update.message.text)
+
+
+# Основная функция
+def main():
+    app = Application.builder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("shutdown", shutdown))
+    app.add_handler(CommandHandler("cmd", run_cmd))
+    app.add_handler(CommandHandler("screenshot", screenshot))
+    app.add_handler(CommandHandler("webcam", webcam))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+
+    print("Бот запущен...")
+    app.run_polling()
+
+
+if __name__ == "__main__":
+    main()
