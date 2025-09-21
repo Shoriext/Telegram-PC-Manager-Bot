@@ -1,5 +1,6 @@
 import subprocess
 import os
+import platform
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -27,22 +28,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда /shutdown
 async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Выключаю ПК...")
-    # Пока не выполняем выключение, просто сообщаем
+    await update.message.reply_text("Выключаю ПК через 10 секунд...")
+    try:
+        system = platform.system()
+        if system == "Windows":
+            subprocess.run("shutdown /s /t 10", shell=True)
+        elif system == "Linux" or system == "Darwin":
+            subprocess.run("shutdown -h +1", shell=True)
+        else:
+            await update.message.reply_text("Неизвестная ОС")
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка выключения: {e}")
 
 
 # Команда /cmd
 async def run_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     command = " ".join(context.args)
     try:
-        # Выполняем команду
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True, encoding="cp866"
-        )  # Для Windows
+        )
         output = result.stdout + result.stderr
         if not output:
             output = "Команда выполнена, вывод пуст."
-        # Отправляем результат (ограничим длину, если слишком длинный)
         if len(output) > 4096:
             output = output[:4090] + "\n[...]"
         await update.message.reply_text(
